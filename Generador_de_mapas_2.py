@@ -26,7 +26,6 @@ def Validar_tipo(Lat, Lon, Tipologia, Nombre):
         tipo = 'CONSULTORIO'
 
     
-    print(tipo)
     if(tipo == 'HOSPITAL'):
         icon = "hospital-o"
         icon_color = "red"
@@ -48,9 +47,62 @@ def Validar_tipo(Lat, Lon, Tipologia, Nombre):
         
     return [esValido, icon, icon_color, Lat, Lon]
 
+def  agregar_descripcion(nombre, Lat, Lon, tecnologias):
+    nombre = str(nombre)
+    nombre = nombre.lower()
+
+    Nombres_tec = pd.DataFrame(tecnologias, columns= ['Hospital / Unidad Médica'])
+    Nombres_tec = np.array(Nombres_tec)
+    
+    Arr_Tec = pd.DataFrame(tecnologias, columns= ['Hospital / Unidad Médica', 'Equipo', 'Descripción', 'Marca', 'Modelo', 'Cantidad'])
+    Arr_Tec = np.array(Arr_Tec)
+    html = ""
+    siDatos = 0
+    i = 0
+    for aString in Nombres_tec:
+        aString = str(aString)
+        aString = (aString[2: (len(aString) - 2)])
+        aString = aString.lower()
+
+        palabras = aString.split(" /")
+        aString = ""
+        for palabra in palabras:
+            aString += palabra
+
+    
+
+        countPalabra = 0
+        palabras = aString.split()
+        for palabra in palabras:
+            if(nombre.count(palabra) > 0 and nombre.count(palabra) < 2):
+                countPalabra += 1
+        
+        
+        if (aString.count(nombre) > 0 or countPalabra >= 5):
+            #print(nombre, aString)
+            siDatos = 1
+            
+            html +=  str(Arr_Tec[i][1]) + " - " + str(Arr_Tec[i][5]) +"<br>"
+             
+        i += 1
+
+    if(siDatos == 0):
+        html = "No hay datos"
+        iframe = folium.IFrame(html,
+                        width=125,
+                        height=50)
+
+    else:
+        iframe = folium.IFrame(html,
+                        width=300,
+                        height=200)
+    
+    return [iframe, 400, siDatos]
+
+
 def Insertar_marcador(Cords, Tipologia, Nombre, tecnologias, Mapa):
 
-    txt_popit = "hola"
+    txt_popup = "hola"
     mx_wth = 500
 
     Tipologia = str(Tipologia)
@@ -61,13 +113,15 @@ def Insertar_marcador(Cords, Tipologia, Nombre, tecnologias, Mapa):
 
     Lat = float(Cords[0])
     Lon = float(Cords[1])
-
+    siDatos = 0
     [siValido, icono, ic_color, Lat, Lon] = Validar_tipo(Lat, Lon, Tipologia, Nombre)    
+    [txt_popup, mx_wth, siDatos] = agregar_descripcion(Nombre, Lat, Lon, tecnologias)
+    
     if(siValido):
         folium.Marker(location=[Lat, Lon], 
                 icon= folium.Icon(icon= icono, prefix= 'fa', color= ic_color),
                 tooltip= Nombre, 
-                popup=folium.Popup(txt_popit, max_width= mx_wth)).add_to(Mapa)
+                popup=folium.Popup(txt_popup, max_width= mx_wth)).add_to(Mapa)
 
 
 def Generar_marcadores (hospital, tecnologias, Mapa):
@@ -102,4 +156,5 @@ def Generar_mapa(N_arch):
     Mapa.save(N_arch + 'Map.html')  #Guarda el mapa en la dirección el excel
 
 #MAIN
+
 Generar_mapa(N_arch =Ingresa_nombre_de_archivo())
