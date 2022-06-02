@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import folium
+from folium import plugins
 
 def Ingresa_nombre_de_archivo():
     nombre = input ("Dame nombre o ruta de tu archivo: ")
@@ -129,6 +130,8 @@ def Generar_marcadores (hospital, tecnologias, Mapa):
     Cords = pd.DataFrame(hospital, columns= ['LATITUD', 'LONGITUD'])
     Cords = np.array(Cords)
     
+    Mapa.add_child(plugins.HeatMap(Cords[0:len(Cords)]))
+
     Nombres = pd.DataFrame(hospital, columns= ['NOMBRE DE LA UNIDAD'])
     Nombres = np.array(Nombres)
 
@@ -141,7 +144,7 @@ def Generar_marcadores (hospital, tecnologias, Mapa):
         i+=1
 
 
-def Generar_mapa(N_arch):
+def Generar_mapa_con_marcadores(N_arch):
 
     N_arch = (N_arch[1: (len(N_arch) - 1)])
     print(N_arch)
@@ -152,9 +155,23 @@ def Generar_mapa(N_arch):
     tecnologias = pd.read_excel (N_arch, sheet_name= 'TECNOLOGÍAS MÉDICAS')
 
     Generar_marcadores (hospital, tecnologias, Mapa)
-
+    
     Mapa.save(N_arch + 'Map.html')  #Guarda el mapa en la dirección el excel
 
-#MAIN
+def Generar_mapa_de_calor(N_arch):
+    N_arch = (N_arch[1: (len(N_arch) - 1)])
+    print(N_arch)
+    Mapa = folium.Map(zoom_start= 12, location=[19.4385309, -99.2088913])   #Genera un Mapa nuevo
+    hospital = pd.read_excel (N_arch, sheet_name= 'HOSPITAL')
+    Cords = pd.DataFrame(hospital, columns= ['LATITUD', 'LONGITUD'])
+    Cords = np.array(Cords)
 
-Generar_mapa(N_arch =Ingresa_nombre_de_archivo())
+    Mapa.add_child(plugins.HeatMap(Cords[0:len(Cords)]))
+
+    Mapa.save(N_arch + 'HeatMap.html')  #Guarda el mapa en la dirección el excel
+    return 0
+
+#MAIN
+N_arch =Ingresa_nombre_de_archivo()
+Generar_mapa_con_marcadores(N_arch)
+Generar_mapa_de_calor(N_arch)
