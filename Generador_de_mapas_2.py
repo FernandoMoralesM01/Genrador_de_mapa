@@ -2,7 +2,9 @@ import geopy.distance
 import pandas as pd
 import numpy as np
 import folium
+import time
 from folium import plugins
+from googlesearch import search
 
 def Ingresa_nombre_de_archivo():
     nombre = input ("Dame nombre o ruta de tu archivo: ")
@@ -18,7 +20,7 @@ def Validar_tipo(Lat, Lon, Tipologia, Nombre):
     Nombre = str(Nombre)
     Nombre = Nombre.lower()
 
-    if (Nombre.count('hospital') > 0 or Tipologia.count('hospital') > 0 or Nombre.count('cent') > 0 or Nombre.count('hg') > 0 or  Nombre.count('h. g. ') > 0):
+    if (Nombre.count('hospital') > 0 or Tipologia.count('hospital') > 0 or Nombre.count('cent') > 0 or Nombre.count('hg') > 0 or  Nombre.count('h.g.') > 0):
         tipo = 'HOSPITAL'
     if (Nombre.count('cl') > 0 or Tipologia.count('cl') > 0):
         tipo = 'CLINICA'
@@ -26,6 +28,10 @@ def Validar_tipo(Lat, Lon, Tipologia, Nombre):
         tipo = 'SANATORIO'
     if(Nombre.count('consultorio') > 0 or Nombre.count('bata') > 0):
         tipo = 'CONSULTORIO'
+    if(Tipologia.count('farmacia')> 0 or Nombre.count('farm')> 0):
+        tipo = 'FARMACIA'
+    if(Tipologia.count('lab')> 0):
+        tipo = 'LAB'
 
     
     if(tipo == 'HOSPITAL'):
@@ -44,12 +50,26 @@ def Validar_tipo(Lat, Lon, Tipologia, Nombre):
                     icon = "stethoscope"
                     icon_color = "pink"
                 else:
-                    icon = "binoculars"
-                    icon_color = "black"
+                    if(tipo == 'FARMACIA'):
+                        icon = "heart"
+                        icon_color = "purple"
+                    else:
+                        if(tipo == 'LAB'):
+                            icon = "flask"
+                            icon_color = "darkblue"
+                        else:
+                            icon = "binoculars"
+                            icon_color = "black"
         
     return [esValido, icon, icon_color, Lat, Lon]
 
-def  agregar_descripcion(nombre, Lat, Lon, tecnologias):
+def  agregar_descripcion(enlace, nombre, Lat, Lon, tecnologias):
+    
+    #query = str(nombre)
+    link = str(enlace)
+    link = link[2:len(link) -2]
+
+
     Lat = float(Lat)
     Lon = float(Lon)
     coords1 = str(Lat) + ", " + str(Lon)
@@ -71,9 +91,9 @@ def  agregar_descripcion(nombre, Lat, Lon, tecnologias):
     siCoincide = False
     Ncoinc = 5
     html = ""
-    
-    upperHtml = "<html>  <head>     <style>     {         box-sizing: content-box;     }     /* Set additional styling options for the columns*/     .column {     float: left;     width: 1%;     }      .row:after {     content: "";     display: table;     clear: both;     }     </style>  </head>  <body>"
-    html += '<br class="row">' + '<div class="column" style="background-color:#FFFFFF;"> <h4>'+ 'Distancia' +' </h4> <p>' + str(dist) + ' km </p> </div>' + '<div class="column" style="background-color:#FFFFFF;"> <h4>'+ 'Tiempo' +' </h4> </div> </br></br></br></br></br></br></div>'
+    #'<br class="row">'+ '<div class="column" style="background-color:#FFFFFF;"> <h4>'+ 'Link' +' </h4> <p>' + link + '</p> </div><br><br><br>' +
+    upperHtml = "<html>  <head>     <style>     {         box-sizing: content-box;     }     /* Set additional styling options for the columns*/     .column {     float: left;     width: 1%;     }      .row:after {     content: "";     display: table;     clear: both; }     </style>  </head>  <body>"
+    html += '<class="row">'+'<br><br></div>'+ '<div class="column" style="background-color:#FFFFFF;"> <h4>'+ 'Distancia' +' </h4> <p>' + str(dist) + ' km </p> </div>' + '<div class="column" style="background-color:#FFFFFF;"> <h4>'+ 'Tiempo' +' </h4> </div></br></br></br></br></br></br></div>'
     html += '<br class="row">' + '<div class="column" style="background-color:#FFFFFF;"> <h4>'+ 'EQUIPO' +' </h4> </div>' + '<div class="column" style="background-color:#FFFFFF;"> <h4>'+ 'MARCA' +' </h4> </div>' + '<div class="column" style="background-color:#FFFFFF;"> <h4>'+ 'MODELO' +' </h4> </div>' + '</br></br></br></div>'
     siDatos = 0
     i = 0
@@ -96,9 +116,12 @@ def  agregar_descripcion(nombre, Lat, Lon, tecnologias):
             if(nombre.count(palabra) > 0 and nombre.count(palabra) < 2):
                 countPalabra += 1
         #print("...", aString)
-        if(aString.count(" ") < 4):
+        if(aString.count(" ") < 4 and nombre.count("s.a. de c.v") == 0):
             Ncoinc = 4
-            
+
+        if(nombre.count(" ") < 5 and nombre.count("s.a. de c.v") > 0):
+            Ncoinc = 5
+
         if (aString.count(nombre) > 0 or countPalabra >= Ncoinc or siCoincide == True):
             #print(nombre, aString)
             siDatos = 1
@@ -119,24 +142,32 @@ def  agregar_descripcion(nombre, Lat, Lon, tecnologias):
         
         i += 1
 
+    if(link != 'a'):
+        linkMessage = "click aquí"
+    else:
+        #for link in search(nombre, stop=1, pause=10):
+        #    print(link)
+        #link = str(link)
+        linkMessage = "Aún no hay link"
+
+    htmlLink = '<br class="row">'+ '<div class="column" style="background-color:#FFFFFF;"> <h4>'+ 'Link' +' </h4> <p> <a href= " ' + link + '" target="_blank"> ' + linkMessage +' </a></p></div><br><br><br><br>'
     if(siDatos == 0):
         #html = '<html>  <head>     <style>     {         box-sizing: border-box;     }     /* Set additional styling options for the columns*/     .column {     float: left;     width: 1%;     }      .row:after {     content: "";     display: table;     clear: both;     }     </style>  </head>  <body>     <div class="row">         <div class="column" style="background-color:#FFB695;">             <h2>Column 1</h2>             <p>Data..</p>         </div>         <div class="column" style="background-color:#96D1CD;">             <h2>Column 2</h2>             <p>Data..</p>         </div>     </div>      <div class="row">         <div class="column" style="background-color:#FFB695;">             <h2>Column 1</h2>             <p>Data..</p>         </div>         <div class="column" style="background-color:#96D1CD;">             <h2>Column 2</h2>             <p>Data..</p>         </div>     </div>  </body> </html>'
-        html = upperHtml + '<br class="row">' + '<div class="column" style="background-color:#FFFFFF;"> <h4>'+ 'Distancia' +' </h4> <p>' + str(dist) + ' km </p> </div> </br></br></br></br></br></br>' + '<div class="column" style="background-color:#FFFFFF;"> <h4>'+ 'Tiempo' +' </h4> </div> </br></br></br></br></br></br></div>' + '  </body> </html>'
+        html = upperHtml + htmlLink +'<br><br><br class="row">' + '<div class="column" style="background-color:#FFFFFF;"> <h4>'+ 'Distancia' +' </h4> <p>' + str(dist) + ' km </p> </div> </br></br></br></br></br></br>' + '<div class="column" style="background-color:#FFFFFF;"> <h4>'+ 'Tiempo' +' </h4> </div> </br></br></br></br></br></br></div>' + '  </body> </html>'
         iframe = folium.IFrame(html,
-                        width= 200,
-                        height=150)
+                        width= 400,
+                        height=300)
 
     else:
-        
-        html = upperHtml + html + '  </body> </html>'
+        html = upperHtml +htmlLink+ html  +'  </body> </html>'
         iframe = folium.IFrame(html,
                         width=14000,
-                        height=300)
+                        height=400)
     
     return [iframe, 450, siDatos]
 
 
-def Insertar_marcador(Cords, Tipologia, Nombre, tecnologias, Mapa):
+def Insertar_marcador(Enlace, Cords, Tipologia, Nombre, tecnologias, Mapa):
 
     txt_popup = "hola"
     mx_wth = 500
@@ -151,7 +182,7 @@ def Insertar_marcador(Cords, Tipologia, Nombre, tecnologias, Mapa):
     Lon = float(Cords[1])
     siDatos = 0
     [siValido, icono, ic_color, Lat, Lon] = Validar_tipo(Lat, Lon, Tipologia, Nombre)    
-    [txt_popup, mx_wth, siDatos] = agregar_descripcion(Nombre, Lat, Lon, tecnologias)
+    [txt_popup, mx_wth, siDatos] = agregar_descripcion(Enlace, Nombre, Lat, Lon, tecnologias)
     
     if(siValido):
         folium.Marker(location=[Lat, Lon], 
@@ -173,9 +204,13 @@ def Generar_marcadores (hospital, tecnologias, Mapa):
     Nombre_de_Tipologia = pd.DataFrame(hospital, columns= ['NOMBRE DE TIPOLOGIA'])
     Nombre_de_Tipologia = np.array(Nombre_de_Tipologia)
 
+    Enlace = pd.DataFrame(hospital, columns= ['LINK'])
+    Enlace = np.array(Enlace)
+
+
     i = 0
     for Nombre in Nombres:
-        Insertar_marcador(Cords[i], Nombre_de_Tipologia[i], Nombre, tecnologias, Mapa)
+        Insertar_marcador(Enlace[i], Cords[i], Nombre_de_Tipologia[i], Nombre, tecnologias, Mapa)
         i+=1
 
 
