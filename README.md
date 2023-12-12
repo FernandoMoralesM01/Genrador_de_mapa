@@ -1,4 +1,4 @@
-# Map Genaration.
+# Map Generation.
 
 A map generation tool using python, the aim of this map is to visualize the necesity of an hospital in a region of mexico city.
 
